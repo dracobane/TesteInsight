@@ -40,5 +40,9 @@ public class Horario {
 	public void setPadrao(boolean padrao) {
 		this.padrao = padrao;
 	}
+	
+	public String toString() {
+		return "["+entrada.toString()+"] - ["+saida.toString()+"]";
+	}
 
 }
