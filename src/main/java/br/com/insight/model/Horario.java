@@ -1,6 +1,7 @@
 package br.com.insight.model;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * @author Rodrigo G de Souza
@@ -43,6 +44,23 @@ public class Horario {
 	
 	public String toString() {
 		return "["+entrada.toString()+"] - ["+saida.toString()+"]";
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(entrada, saida);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Horario other = (Horario) obj;
+		return Objects.equals(entrada, other.entrada) && Objects.equals(saida, other.saida);
 	}
 
 }

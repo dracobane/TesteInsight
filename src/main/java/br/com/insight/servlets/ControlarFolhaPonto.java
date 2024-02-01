@@ -8,6 +8,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -16,6 +17,8 @@ import com.google.gson.JsonObject;
 import br.com.insight.dto.HorarioDTO;
 import br.com.insight.exception.HorarioException;
 import br.com.insight.model.Horario;
+import br.com.insight.model.HorarioSuporte;
+import br.com.insight.model.LinhaDoTempo;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -88,175 +91,108 @@ public class ControlarFolhaPonto extends HttpServlet {
 	 */
 	private void processarExtrasEAtrasos(List<HorarioDTO> extrasList, List<HorarioDTO> atrasosList,
 			List<Horario> padraoList, List<Horario> lancamentoList) {
-		boolean fim = false;
-		int contadorPadrao = 0;
-		int contadorLancamento = 0;
-		while (!fim) {
-			Horario lancamentoAnterior = contadorLancamento-1 >= 0 && lancamentoList.size() > contadorLancamento-1 ? 
-					lancamentoList.get(contadorLancamento-1) : null;
-			Horario padraoAnterior = contadorPadrao-1 >= 0 && padraoList.size() > contadorPadrao-1 ? 
-					padraoList.get(contadorPadrao-1) : null;
-			Horario lancamentoAtual = lancamentoList.size() > contadorLancamento ? 
-					lancamentoList.get(contadorLancamento) : null;
-			Horario padraoAtual = padraoList.size() > contadorPadrao ? padraoList.get(contadorPadrao) : null;
-			Horario lancamentoFuturo = lancamentoList.size() > contadorLancamento+1 ? 
-					lancamentoList.get(contadorLancamento+1) : null;
-			Horario padraoFuturo = padraoList.size() > contadorPadrao+1 ? padraoList.get(contadorPadrao+1) : null;
+		
+		List<LinhaDoTempo> tempo = constroiLinhaTemporal(padraoList, lancamentoList);
+		
+		// Percorre a lista temporal olhando a posicao atual e a proxima
+		boolean iniciouPadrao = false;
+		boolean iniciouLancamento = false;
+		for (int i=0; i < tempo.size(); i++) {
+			LinhaDoTempo atual = tempo.get(i);
+			LinhaDoTempo futuro = tempo.size() > i+1 ? tempo.get(i+1) : null;
 			
-			// nao ha mais lancamentos e padroes na lista
-			if (lancamentoAtual == null && padraoAtual == null) {
-				break;
-			}
-			
-			// lancamento de entrada e saida coincidem com a entrada e saida padrao
-			if (lancamentoAtual != null && padraoAtual != null && 
-				lancamentoAtual.getEntrada().toString().equals(padraoAtual.getEntrada().toString()) && 
-				lancamentoAtual.getSaida().toString().equals(padraoAtual.getSaida().toString())) {
-				contadorPadrao++;
-				contadorLancamento++;
-			}
-			
-			// nao ha mais lancamentos mas ha padroes de entrada e saida
-			if (lancamentoAtual == null && padraoAtual != null) {
-				// ultimo lancamento de saida excedeu a saida do ultimo padrao e a entrada pertencia ao anterior
-				if (padraoAnterior != null && lancamentoAnterior != null && 
-					lancamentoAnterior.getEntrada().isBefore(padraoAnterior.getSaida()) && 
-					lancamentoAnterior.getSaida().isAfter(padraoAnterior.getSaida())) {
-					if (lancamentoAnterior.getSaida().isAfter(padraoAtual.getEntrada())) {
-						alimentaListaExtraOuAtraso(extrasList, padraoAnterior.getSaida(), padraoAtual.getEntrada());
-					} else {
-						alimentaListaExtraOuAtraso(extrasList, padraoAnterior.getSaida(), lancamentoAnterior.getSaida());
-						contadorLancamento++;
+			if (atual.getPadrao() != null && atual.getLancamento() == null) {//eh padrao e nao eh lancamento
+				iniciouPadrao = atual.getPadrao().isEntrada();
+				if (futuro != null) {
+					if (!iniciouLancamento && iniciouPadrao) {
+						alimentaListaExtraOuAtraso(atrasosList, atual.getHorario(), futuro.getHorario());
+					} else if (futuro.getPadrao() != null && !iniciouPadrao && iniciouLancamento) {
+						alimentaListaExtraOuAtraso(extrasList, atual.getHorario(), futuro.getHorario());
+					} else if (futuro.getLancamento() != null && iniciouLancamento && !iniciouPadrao) {
+						alimentaListaExtraOuAtraso(extrasList, atual.getHorario(), futuro.getHorario());
 					}
 				}
-				// saida do ultimo lancamento ultrapassa a entrada do padrao atual mas termina antes desta saida
-				if (lancamentoAnterior != null && lancamentoAnterior.getSaida().isAfter(padraoAtual.getEntrada())) { 
-					if (lancamentoAnterior.getSaida().isBefore(padraoAtual.getSaida())) {
-						alimentaListaExtraOuAtraso(atrasosList, lancamentoAnterior.getSaida(), padraoAtual.getSaida());
-					} else if (padraoFuturo == null) {
-						alimentaListaExtraOuAtraso(extrasList, padraoAtual.getSaida(), lancamentoAnterior.getSaida());
+			}
+			if (atual.getPadrao() == null && atual.getLancamento() != null) {//eh lancamento e nao eh padrao
+				iniciouLancamento = atual.getLancamento().isEntrada();
+				if (futuro != null) {
+					if (!iniciouPadrao && iniciouLancamento) {
+						alimentaListaExtraOuAtraso(extrasList, atual.getHorario(), futuro.getHorario());
+					} else if (futuro.getLancamento() != null && !iniciouLancamento && iniciouPadrao) {
+						alimentaListaExtraOuAtraso(atrasosList, atual.getHorario(), futuro.getHorario());
+					} else if (futuro.getPadrao() != null && iniciouPadrao && !iniciouLancamento) {
+						alimentaListaExtraOuAtraso(atrasosList, atual.getHorario(), futuro.getHorario());
 					}
-				// saida do ultimo lancamento nao invade o novo periodo
-				} else {
-					alimentaListaExtraOuAtraso(atrasosList, padraoAtual.getEntrada(), padraoAtual.getSaida());
 				}
-				contadorPadrao++;
-				continue;
 			}
-			
-			// ainda ha lancamentos mas nao ha mais padroes
-			if (lancamentoAtual != null && padraoAtual == null) {
-				if (lancamentoAtual.getEntrada().isBefore(padraoAnterior.getSaida())) {
-					alimentaListaExtraOuAtraso(extrasList, padraoAnterior.getSaida(), lancamentoAtual.getSaida());
-				} else {
-					alimentaListaExtraOuAtraso(extrasList, lancamentoAtual.getEntrada(), lancamentoAtual.getSaida());
-				}
-				contadorLancamento++;
-				continue;
-			}
-			
-			// lancamento de periodo posterior ao padrao atual
-			if (lancamentoAtual != null && padraoAtual != null &&
-				!lancamentoAtual.getEntrada().isBefore(padraoAtual.getSaida())) {
-				alimentaListaExtraOuAtraso(atrasosList, padraoAtual.getEntrada(), padraoAtual.getSaida());
-				contadorPadrao++;
-				continue;
-			}
-			
-			// lancamento de entrada e saida sao anteriores ao padrao de entrada mas nao coincidem com o padrao anterior
-			if (lancamentoAtual != null && padraoAtual != null &&
-				lancamentoAtual.getEntrada().isBefore(padraoAtual.getEntrada()) && 
-				!lancamentoAtual.getSaida().isAfter(padraoAtual.getEntrada()) && 
-				(padraoAnterior != null && !padraoAnterior.getSaida().isBefore(lancamentoAtual.getEntrada()) || 
-				padraoAnterior == null)) {
-				alimentaListaExtraOuAtraso(extrasList, lancamentoAtual.getEntrada(), lancamentoAtual.getSaida());
-				contadorLancamento++;
-				continue;
-			}
-			
-			//--- COMECAM AS INTERSECCOES --------------------------------//
-			// Entrada atrasada mas dentro do periodo
-			if (lancamentoAtual != null && padraoAtual != null &&
-				lancamentoAtual.getEntrada().isAfter(padraoAtual.getEntrada()) && 
-				lancamentoAtual.getEntrada().isBefore(padraoAtual.getSaida())) {
-				
-				// existe um lancamento anterior onde terminou no periodo atual
-				if (lancamentoAnterior != null && !lancamentoAnterior.getSaida().isBefore(padraoAtual.getEntrada())) {
-					alimentaListaExtraOuAtraso(atrasosList, lancamentoAnterior.getSaida(), lancamentoAtual.getEntrada());
-				// nao existe ou nao terminou no periodo atual
-				} else {
-					alimentaListaExtraOuAtraso(atrasosList, padraoAtual.getEntrada(), lancamentoAtual.getEntrada());
-				}
-				
-				// encerrou antes da saida padrao
-				if (lancamentoAtual.getSaida().isBefore(padraoAtual.getSaida())) {
-					if (lancamentoFuturo != null && !lancamentoFuturo.getEntrada().isAfter(padraoAtual.getSaida())) {
-						contadorLancamento++;
-						continue;
-					} else {
-						alimentaListaExtraOuAtraso(atrasosList, lancamentoAtual.getSaida(), padraoAtual.getSaida());
-						contadorLancamento++;
-						contadorPadrao++;
-						continue;
+			if (atual.getPadrao() != null && atual.getLancamento() != null) {//ambos atualizam os marcadores
+				iniciouPadrao = atual.getPadrao().isEntrada();
+				iniciouLancamento = atual.getLancamento().isEntrada();
+				if (futuro != null) {
+					if (!iniciouPadrao && iniciouLancamento) {
+						alimentaListaExtraOuAtraso(extrasList, atual.getHorario(), futuro.getHorario());
+					} else if (iniciouPadrao && !iniciouLancamento) {
+						alimentaListaExtraOuAtraso(atrasosList, atual.getHorario(), futuro.getHorario());
 					}
-				// encerrou no horario ou posterior
-				} else {
-					if (padraoFuturo != null && 
-						!lancamentoAtual.getSaida().isAfter(padraoFuturo.getEntrada()) ||
-						lancamentoAtual.getSaida().isAfter(padraoAtual.getSaida())) {
-						alimentaListaExtraOuAtraso(extrasList, padraoAtual.getSaida(), lancamentoAtual.getSaida());
-					}
-					contadorLancamento++;
-					contadorPadrao++;
-					continue;
 				}
 			}
-			
-			// Entrada correta mas saida dentro do periodo
-			if (lancamentoAtual != null && padraoAtual != null &&
-				lancamentoAtual.getEntrada().toString().equals(padraoAtual.getEntrada().toString()) && 
-				lancamentoAtual.getSaida().isBefore(padraoAtual.getSaida())) {
-				
-				// nao existem lancamentos futuros ou nao iniciam dentro deste periodo
-				if ((lancamentoFuturo != null && !lancamentoFuturo.getEntrada().isBefore(padraoAtual.getSaida())) ||
-					lancamentoFuturo == null) {
-					alimentaListaExtraOuAtraso(atrasosList, lancamentoAtual.getSaida(), padraoAtual.getSaida());
-					contadorPadrao++;
-				}
-				contadorLancamento++;
-				continue;
-			}
-			
-			// entrada anterior e saida no periodo ou posterior ao periodo
-			if (lancamentoAtual != null && padraoAtual != null &&
-				lancamentoAtual.getEntrada().isBefore(padraoAtual.getEntrada()) && 
-				lancamentoAtual.getSaida().isAfter(padraoAtual.getEntrada())) {
-				
-				// padrao anterior nao existe ou, lancamento da entrada nao antecede a saida anterior
-				if (padraoAnterior == null || 
-					!padraoAnterior.getSaida().isAfter(lancamentoAtual.getEntrada())) {
-					alimentaListaExtraOuAtraso(extrasList, lancamentoAtual.getEntrada(), padraoAtual.getEntrada());
-					if (lancamentoAtual.getSaida().isAfter(padraoAtual.getSaida()) && 
-						(padraoFuturo == null || !padraoFuturo.getEntrada().isBefore(lancamentoAtual.getSaida()))) {
-						alimentaListaExtraOuAtraso(extrasList, padraoAtual.getSaida(), lancamentoAtual.getSaida());
-						contadorPadrao++;
-					}
-					contadorLancamento++;
-					continue;
-				
-				// lancamento da entrada esta presente no periodo anterior
-				} else if (padraoAnterior != null && 
-						lancamentoAtual.getEntrada().isBefore(padraoAnterior.getSaida())) {
-					alimentaListaExtraOuAtraso(extrasList, padraoAnterior.getSaida(), padraoAtual.getEntrada());
-					contadorLancamento++;
-					continue;
-				}
-				
-			}
-			//------------------------------------------------------------//
 		}
+		
 	}
 	
+	/**
+	 * Constroi uma lista com a linha do tempo e seus lancamentos, tanto padrao como trabalhadas.
+	 * 
+	 * @param padraoList
+	 * @param lancamentoList
+	 * @return
+	 */
+	private List<LinhaDoTempo> constroiLinhaTemporal(List<Horario> padraoList, List<Horario> lancamentoList) {
+		List<LinhaDoTempo> tempo = new LinkedList<>();
+		for (Horario h : padraoList) {
+			tempo.add(new LinhaDoTempo(h.getEntrada(), new HorarioSuporte(true, h.getEntrada()), null));
+			tempo.add(new LinhaDoTempo(h.getSaida(), new HorarioSuporte(false, h.getSaida()), null));
+		}
+		for (Horario l : lancamentoList) {
+			LinhaDoTempo t = tempo.get(0);
+			if (t.getHorario().equals(l.getEntrada())) {
+				t.setLancamento(new HorarioSuporte(true, l.getEntrada()));
+			} else {
+				for (int j=0; j < tempo.size(); j++) {
+					LinhaDoTempo temp = tempo.get(j);
+					if (temp.getHorario().equals(l.getEntrada())) {
+						temp.setLancamento(new HorarioSuporte(true, l.getEntrada()));
+						break;
+					} else if (temp.getHorario().isAfter(l.getEntrada())) {
+						tempo.add(j, new LinhaDoTempo(l.getEntrada(), null, new HorarioSuporte(true, l.getEntrada())));
+						break;
+					}
+				}
+				if (!tempo.contains(new LinhaDoTempo(l.getEntrada()))) {
+					tempo.add(new LinhaDoTempo(l.getEntrada(), null, new HorarioSuporte(true, l.getEntrada())));
+				}
+			}
+			if (t.getHorario().equals(l.getSaida())) {
+				t.setLancamento(new HorarioSuporte(false, l.getSaida()));
+			} else {
+				for (int j=0; j < tempo.size(); j++) {
+					LinhaDoTempo temp = tempo.get(j);
+					if (temp.getHorario().equals(l.getSaida())) {
+						temp.setLancamento(new HorarioSuporte(false, l.getSaida()));
+						break;
+					} else if (temp.getHorario().isAfter(l.getSaida())) {
+						tempo.add(j, new LinhaDoTempo(l.getSaida(), null, new HorarioSuporte(false, l.getSaida())));
+						break;
+					}
+				}
+				if (!tempo.contains(new LinhaDoTempo(l.getSaida()))) {
+					tempo.add(new LinhaDoTempo(l.getSaida(), null, new HorarioSuporte(false, l.getSaida())));
+				}
+			}
+		}
+		return tempo;
+	}
+
 	/**
 	 * Recebe uma lista, podendo ser atraso ou extra, e alimenta a lista com os dados informados
 	 * atraves de um novo objeto.
@@ -336,12 +272,13 @@ public class ControlarFolhaPonto extends HttpServlet {
     							(h.getSaida().isAfter(diaAtual) || //saida padrao posterior a 23h59 do dia atual ou
     							padroes.size() > p+1 && padroes.get(p+1).getEntrada().isAfter(diaAtual)) && //proxima entrada apos dia atual e
     							(LocalTime.parse(entrada[i]).isBefore(h1) || //entrada anterior a entrada padrao ou
-    							(h2f != null && LocalTime.parse(entrada[i]).isBefore(h2f))) && // a entrada nao eh maior que a saida posterior
-    							LocalTime.parse(entrada[i]).isBefore(LocalTime.parse(saida[i]))) { 
-						entradaDTime = LocalDateTime.of(LocalDate.now().plusDays(1), entradaTime);
-						diaPosterior = true;
-						break;
-						
+    							(h2f != null && LocalTime.parse(entrada[i]).isBefore(h2f))) && // a entrada nao eh maior que a saida posterior e
+    							LocalTime.parse(entrada[i]).isBefore(LocalTime.parse(saida[i]))) { // lancamento da entrada eh anterior a propria saida
+    					if (LocalTime.parse(entrada[i]).getHour() - padroes.get(padroes.size()-1).getSaida().getHour() < 10) {
+							entradaDTime = LocalDateTime.of(LocalDate.now().plusDays(1), entradaTime);
+							diaPosterior = true;
+							break;
+    					}
     				}
     				
     			}
@@ -371,7 +308,7 @@ public class ControlarFolhaPonto extends HttpServlet {
     					}
     				}
     				if (!algumPreenchimento) {
-    					mensagem = "Precisa preencher ao menos uma entrada e saída";
+    					mensagem = "Precisa preencher ao menos uma entrada e saida";
         				throw new HorarioException(mensagem);
     				}
     			}
@@ -451,16 +388,16 @@ public class ControlarFolhaPonto extends HttpServlet {
     					}
     				}
     				if (!algumPreenchimento) {
-    					mensagem = "Precisa preencher ao menos uma entrada e saída padrão";
+    					mensagem = "Precisa preencher ao menos uma entrada e saida padrao";
         				throw new HorarioException(mensagem);
     				}
     			}
     			if (entradaPadrao[i].isBlank() && !saidaPadrao[i].isBlank()) {
-    				mensagem = "Precisa preencher a entrada padrão";
+    				mensagem = "Precisa preencher a entrada padrao";
     				throw new HorarioException(mensagem);
     			}
     			if (!entradaPadrao[i].isBlank() && saidaPadrao[i].isBlank()) {
-    				mensagem = "Precisa preencher a saida padrão";
+    				mensagem = "Precisa preencher a saida padrao";
     				throw new HorarioException(mensagem);
     			}
     		}

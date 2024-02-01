@@ -1,0 +1,52 @@
+body {
+	margin: 0;
+	padding: 0;
+	background-color: #17a2b8;
+	height: 100vh;
+}
+#ponto .fonte-titulo {
+	font-family: 'Kaushan Script', cursive;
+}
+#ponto .titulo_one {
+	margin-top: 18px;
+}
+#ponto .container #ponto-row #ponto-column #ponto-box {
+	margin-top: 10px;
+	max-width: 700px;
+	border: 1px solid #9C9C9C;
+	border-radius: 12px;
+	background-color: #EAEAEA;
+}
+#ponto .container #ponto-row #ponto-column #ponto-box .fonte_padrao {
+	color: #999;
+}
+#ponto .container #ponto-row #ponto-column #ponto-box .table button {
+	border: 0px;
+	color: #999;
+	margin-top: 8px;
+}
+#ponto .container #ponto-row #ponto-column #ponto-box .table button:hover {
+	border: 0px;
+	color: #17a2b8;
+}
+#ponto .container #ponto-row #ponto-column #ponto-box #botoes {
+	display: flex;
+	justify-content: center;
+	padding-bottom: 26px;
+}
+#ponto .container #ponto-row #ponto-column #ponto-box #botoes button {
+	margin: 0 20px 0 20px;
+}
+@media (max-width: 991px) {
+	#ponto .container #ponto-row #ponto-column #ponto-box {
+		min-width: 450px;
+	}
+	.col-md-6 {
+		max-width: 80%;
+	}
+}
+@media (max-width: 575px) {
+	.col-md-6 {
+		max-width: 90%;
+	}
+}
