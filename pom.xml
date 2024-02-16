@@ -4,7 +4,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
   <modelVersion>4.0.0</modelVersion>
   <groupId>br.com.insight</groupId>
   <artifactId>FolhaPontoTeste</artifactId>
-  <version>0.0.3-SNAPSHOT</version>
+  <version>0.0.4-SNAPSHOT</version>
   <packaging>war</packaging>
   <name>Projeto teste para Insight : Autor: Rodrigo G de Souza</name>
   <build>
