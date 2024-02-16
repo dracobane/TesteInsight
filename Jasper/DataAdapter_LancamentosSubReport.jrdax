@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beanDataAdapter class="net.sf.jasperreports.data.bean.BeanDataAdapterImpl">
+  <name>DataAdapterLancamentos</name>
+  <factoryClass>br.com.insight.report.ReportPeriodo</factoryClass>
+  <methodName>createBeanCollection</methodName>
+  <useFieldDescription>false</useFieldDescription>
+</beanDataAdapter>

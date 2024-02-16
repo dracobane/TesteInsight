@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.1.final using JasperReports Library version 6.21.0-4f56c4f36cd19e17675219a9ac4692d5f0f13b06  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Sub_Extras" pageWidth="270" pageHeight="100" columnWidth="270" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c3d6e6a8-2f61-46bd-8014-b41fe42709ba">
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<field name="entrada" class="java.lang.String">
+		<fieldDescription><![CDATA[entrada]]></fieldDescription>
+	</field>
+	<field name="saida" class="java.lang.String">
+		<fieldDescription><![CDATA[saida]]></fieldDescription>
+	</field>
+	<field name="intervalo" class="java.lang.String">
+		<fieldDescription><![CDATA[intervalo]]></fieldDescription>
+	</field>
+	<columnHeader>
+		<band height="24" splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="px"/>
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="0" width="270" height="22" backcolor="#EBEBEB" uuid="a600ebd8-2db3-4b22-b1d4-98f66f5f4d86">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<rectangle>
+				<reportElement mode="Transparent" x="90" y="0" width="90" height="22" uuid="b6f6b054-66a7-4a5d-bf76-100fa2661944"/>
+				<graphicElement>
+					<pen lineColor="#FFFFFF"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="90" y="1" width="90" height="22" uuid="ea296ef1-3c3b-47a5-b4da-d70e708e97c7">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="bb2ed921-a252-4378-ba6c-28e044e3a3cd"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Fim]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="1" width="90" height="22" uuid="636cb68b-dc8f-4a5a-ac80-7a2e6c1c6937">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="48d76476-3918-474d-9536-870b1f7eabb1"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9" isBold="true" isUnderline="false"/>
+				</textElement>
+				<text><![CDATA[Início]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="180" y="1" width="90" height="22" uuid="d5a2c1c5-bf93-46f0-a81e-9375b341a85a">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="020737d5-b92f-44b1-ae4b-8c555aa8a16b"/>
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.y" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Horas]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="16" splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="px"/>
+			<textField>
+				<reportElement x="0" y="0" width="90" height="16" uuid="bcfe2cb9-7f5b-4981-be79-905e0523e1c3">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="48d76476-3918-474d-9536-870b1f7eabb1"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{entrada}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="90" y="0" width="90" height="16" uuid="72ef9d6b-3746-414a-8c52-07ccd56090b0">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="bb2ed921-a252-4378-ba6c-28e044e3a3cd"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{saida}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="180" y="0" width="90" height="16" uuid="8d40188d-34e2-4f8c-857d-c9e2c032ac85">
+					<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="020737d5-b92f-44b1-ae4b-8c555aa8a16b"/>
+				</reportElement>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="9"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{intervalo}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+</jasperReport>

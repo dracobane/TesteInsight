@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beanDataAdapter class="net.sf.jasperreports.data.bean.BeanDataAdapterImpl">
+  <name>DataPonto</name>
+  <factoryClass>br.com.insight.report.ReportGenerate</factoryClass>
+  <methodName>createMapObjectToReport</methodName>
+  <useFieldDescription>false</useFieldDescription>
+</beanDataAdapter>

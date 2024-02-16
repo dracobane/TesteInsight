@@ -34,5 +34,12 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
 		<version>6.0.0</version>
 		<scope>provided</scope>
 	</dependency>
+	
+	<dependency>
+	    <groupId>net.sf.jasperreports</groupId>
+	    <artifactId>jasperreports</artifactId>
+	    <version>6.20.6</version>
+	</dependency>
+	
   </dependencies>
 </project>

@@ -34,9 +34,9 @@
 					$.ajax({
 						url: contexto+'/ControlarFolhaPonto',
 						type: 'POST',
-						data: $("#form_padrao").serialize()+"&"+$("#form_lancamento").serialize(),
+						data: $("#form_padrao").serialize(),
 						success: function(data) {
-							//console.log(data);
+							console.log(data);
 							const objectJson = JSON.parse(data);
 							if (!objectJson.status){
 								mostraDialogo(objectJson.message, "danger", 3000);
@@ -121,6 +121,14 @@
 				    $(this).closest('tr').remove();
 				});
 				
+				$("#btnPDF").click(function(){
+					var acao = document.getElementById("acao")
+					acao.value = 'download';
+					var form = $("#form_padrao");
+					form.submit();
+					acao.value = 'calculo';
+				});
+				
 			});
 			
 			function mostraDialogo(mensagem, tipo, tempo){
@@ -164,10 +172,10 @@
 				<div id="ponto-row" class="row justify-content-center align-items-center">
 					<div id="ponto-column" class="col-md-6">
 						<div id="ponto-box" class="col-md-12">
-							
-							<h3 class="text-center text-info fonte-titulo titulo_one">Horário Padrão</h3>
-							<div class="table-responsive">
-								<form id="form_padrao">
+
+							<form id="form_padrao" method="POST" target="_blank" action="ControlarFolhaPonto">
+								<h3 class="text-center text-info fonte-titulo titulo_one">Horário Padrão</h3>
+								<div class="table-responsive">
 									<table class="table" id="table_padrao">
 										<thead class="fonte_padrao">
 											<th>Entrada</th>
@@ -178,16 +186,14 @@
 											<tr>
 												<td><input type="time" class="form-control" name="entradaPadrao" required min="00:00" max="23:59" /></td>
 												<td><input type="time" class="form-control" name="saidaPadrao" required min="00:00" max="23:59" /></td>
-												<td>&nbsp;</td>
+												<td><input type="hidden" id="acao" name="acao" value="calculo" /></td>
 											</tr>
 										</tbody>
 									</table>
-								</form>
-							</div>
-							
-							<h3 class="text-center text-info fonte-titulo">Marcações</h3>
-							<div class="table-responsive">
-								<form id="form_lancamento">
+								</div>
+								
+								<h3 class="text-center text-info fonte-titulo">Marcações</h3>
+								<div class="table-responsive">
 									<table class="table" id="table_lancamento">
 										<thead class="fonte_padrao">
 											<th>Entrada</th>
@@ -202,8 +208,8 @@
 											</tr>
 										</tbody>
 									</table>
-								</form>
-							</div>
+								</div>
+							</form>
 							
 							<h3 class="text-center text-info fonte-titulo">Horas Extras</h3>
 							<div class="table-responsive">
@@ -236,6 +242,7 @@
 							<div class="table-responsive" id="botoes">
 								<button type="button" id="btnEnviar" class="btn btn-info btn-md"><span>Enviar</span></button>
 								<button type="button" id="btnLimpar" class="btn btn-info btn-md"><span>Limpar</span></button>
+								<button type="button" id="btnPDF" class="btn btn-info btn-md"><span>PDF</span></button>
 							</div>
 						</div>
 					</div>

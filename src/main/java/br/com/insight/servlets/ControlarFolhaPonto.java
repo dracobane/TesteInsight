@@ -2,12 +2,14 @@ package br.com.insight.servlets;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -16,10 +18,15 @@ import com.google.gson.JsonObject;
 
 import br.com.insight.dto.HorarioDTO;
 import br.com.insight.exception.HorarioException;
+import br.com.insight.exception.RelatorioException;
 import br.com.insight.model.Horario;
 import br.com.insight.model.HorarioSuporte;
 import br.com.insight.model.LinhaDoTempo;
+import br.com.insight.report.Report;
+import br.com.insight.report.ReportGenerate;
+import br.com.insight.report.ReportPeriodo;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,6 +44,7 @@ public class ControlarFolhaPonto extends HttpServlet {
 	private static final long serialVersionUID = -1873002750257597327L;
 	
 	private static DateTimeFormatter FMT = DateTimeFormatter.ofPattern("HH:mm");
+	private static DateTimeFormatter DFMT = DateTimeFormatter.ofPattern("dd-MM-uuuu");
 	
 	public ControlarFolhaPonto() {
 		super();
@@ -57,6 +65,7 @@ public class ControlarFolhaPonto extends HttpServlet {
     	String[] saidaPadrao = request.getParameterValues("saidaPadrao");
     	String[] entrada = request.getParameterValues("entrada");
     	String[] saida = request.getParameterValues("saida");
+    	String acao = request.getParameter("acao");
     	
     	List<Horario> padraoList = new ArrayList<>();
 		try {
@@ -75,9 +84,91 @@ public class ControlarFolhaPonto extends HttpServlet {
 		List<HorarioDTO> extrasList = new ArrayList<>();
 		List<HorarioDTO> atrasosList = new ArrayList<>();
 		processarExtrasEAtrasos(extrasList, atrasosList, padraoList, lancamentoList);
-    	
-    	String mensagem = "Processamento executado com sucesso";
-    	retornoDoProcessamento(response, mensagem, true, extrasList, atrasosList);
+		
+		if (acao.equals("download")) {
+			geraArquivoJsonReports(response, extrasList, atrasosList, padraoList, lancamentoList);
+			
+		} else {
+			String mensagem = "Processamento executado com sucesso";
+			retornoDoProcessamento(response, mensagem, true, extrasList, atrasosList);
+		}
+	}
+
+	/**
+	 * Constroi o arquivo base para alimentar o Reports.
+	 * 
+	 * @param response 
+	 * @param extrasList
+	 * @param atrasosList
+	 * @param padraoList
+	 * @param lancamentoList
+	 * @throws IOException 
+	 */
+	private void geraArquivoJsonReports(HttpServletResponse response, List<HorarioDTO> extrasList, List<HorarioDTO> atrasosList,
+			List<Horario> padraoList, List<Horario> lancamentoList) throws IOException {
+		
+		List<ReportPeriodo> reportPadraoList = padraoList.stream().map(p->new ReportPeriodo(FMT.format(p.getEntrada()),FMT.format(p.getSaida()), calculaDiferencaTempo(p.getEntrada(), p.getSaida()).toString())).toList();
+		List<ReportPeriodo> reportLancamentoList = lancamentoList.stream().map(p->new ReportPeriodo(FMT.format(p.getEntrada()),FMT.format(p.getSaida()), calculaDiferencaTempo(p.getEntrada(), p.getSaida()).toString())).toList();
+		
+		List<ReportPeriodo> reportAtrasoList = atrasosList.stream().map(p->new ReportPeriodo(p.entrada(),p.saida(),p.diferenca())).toList();
+		List<ReportPeriodo> reportExtraList = extrasList.stream().map(p->new ReportPeriodo(p.entrada(),p.saida(),p.diferenca())).toList();
+		
+		Report report = new Report();
+		report.setEmpresa("Pedreira Botucatu Ltda");
+		report.setCnpj("02.313.036/0001-50");
+		report.setEndereco("Alcides Soares");
+		report.setCidade("Botucatu");
+		report.setFuncionario("Antonio Moreira");
+		report.setDepto("Engenharia");
+		report.setMatricula("22554488");
+		report.setCargo("22-Engenheiro Civil Jr");
+		report.setPeriodo("01/2024");
+		report.setData(DFMT.format(LocalDate.now()));
+		report.setPadraoList(reportPadraoList);
+		report.setLancamentoList(reportLancamentoList);
+		report.setAtrasoList(reportAtrasoList);
+		report.setExtraList(reportExtraList);
+		report.setTotalTrabalhado(calcularTotalHorasReport(report.getLancamentoList()));
+		report.setTotalAtrasos(calcularTotalHorasReport(report.getAtrasoList()));
+		report.setTotalExtras(calcularTotalHorasReport(report.getExtraList()));
+		
+		ServletOutputStream ouputStream = response.getOutputStream();
+		int randomico = (int)(Math.random() * 1000);
+		String nomeDoArquivo = "relatorio_ponto_"+randomico+".pdf";
+		try {
+			ReportGenerate reportGenerate = new ReportGenerate();
+			byte[] relt = reportGenerate.generateReport(getServletContext().getRealPath("WEB-INF/reports/folha_de_ponto.jasper"), new HashMap<>(), report);
+			
+			response.setContentType("application/pdf");
+			response.setContentLength(relt.length);
+			response.setHeader("Content-disposition", "inline;filename="+nomeDoArquivo);
+			//response.setHeader("Content-disposition", "attachment;filename="+nomeDoArquivo);
+			ouputStream.write(relt);
+			response.getCharacterEncoding();
+	        ouputStream.flush();
+	        
+		} catch (RelatorioException e) {
+			retornoDoProcessamento(response, e.getMessage(), false);
+		} finally {
+			ouputStream.close();
+		}
+		
+	}
+
+	/**
+	 * Calcula o total de horas para o Relatorio de acordo com a lista informada.
+	 * 
+	 * @param lista
+	 * @return
+	 */
+	private String calcularTotalHorasReport(List<ReportPeriodo> lista) {
+		LocalTime horas = LocalTime.parse("00:00");
+		for (ReportPeriodo p : lista) {
+			Long minutes = Duration.between(LocalDateTime.of(LocalDate.now(), LocalTime.parse("00:00")), 
+					LocalDateTime.of(LocalDate.now(), LocalTime.parse(p.getIntervalo()))).toMinutes();
+			horas = horas.plus(minutes, ChronoUnit.MINUTES);
+		}
+		return horas.toString();
 	}
 
 	/**
